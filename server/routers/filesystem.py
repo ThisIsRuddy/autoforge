@@ -133,10 +133,29 @@ def is_path_blocked(path: Path) -> bool:
 
     blocked_paths = get_blocked_paths()
 
+    # Check if the path is inside the user's home directory.
+    # This matters when home is under a system path (e.g. /var/www for www-data):
+    # we allow navigation inside home but still block sensitive subdirs like ~/.ssh.
+    try:
+        home = Path.home().resolve()
+        resolved.relative_to(home)
+        is_under_home = True
+    except (ValueError, RuntimeError):
+        is_under_home = False
+
     # Check if path is exactly a blocked path or inside one
     for blocked in blocked_paths:
         try:
             resolved.relative_to(blocked)
+            # Path is inside a blocked directory. If the path is under home,
+            # only enforce blocks that are themselves inside home (e.g. ~/.ssh).
+            # Skip system-level ancestors of home (e.g. /var blocking /var/www).
+            if is_under_home:
+                try:
+                    blocked.relative_to(home)
+                    return True  # Blocked path is inside home (sensitive subdir)
+                except ValueError:
+                    continue  # Blocked path is a system ancestor of home, skip
             return True
         except ValueError:
             pass
