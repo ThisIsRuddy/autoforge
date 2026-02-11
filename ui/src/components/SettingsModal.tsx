@@ -24,7 +24,9 @@ const PROVIDER_INFO_TEXT: Record<string, string> = {
   kimi: 'Get an API key at kimi.com',
   glm: 'Get an API key at open.bigmodel.cn',
   ollama: 'Run models locally. Install from ollama.com',
-  custom: 'Connect to any OpenAI-compatible API endpoint.',
+  openrouter:
+    'Access 200+ models through OpenRouter. Get your API key from openrouter.ai/keys. Supports Claude, GPT-4, Gemini, Llama, and more.',
+  custom: 'Connect to any Anthropic-compatible API endpoint.',
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -103,7 +105,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const isAlternativeProvider = currentProvider !== 'claude'
   const showAuthField = isAlternativeProvider && currentProviderInfo?.requires_auth
   const showBaseUrlField = currentProvider === 'custom'
-  const showCustomModelInput = currentProvider === 'custom' || currentProvider === 'ollama'
+  const showCustomModelInput = currentProvider === 'custom' || currentProvider === 'ollama' || currentProvider === 'openrouter'
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

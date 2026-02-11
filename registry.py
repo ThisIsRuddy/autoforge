@@ -686,6 +686,14 @@ API_PROVIDERS: dict[str, dict[str, Any]] = {
         ],
         "default_model": "qwen3-coder",
     },
+    "openrouter": {
+        "name": "OpenRouter",
+        "base_url": "https://openrouter.ai/api",
+        "requires_auth": True,
+        "auth_env_var": "ANTHROPIC_AUTH_TOKEN",
+        "models": [],
+        "default_model": "",
+    },
     "custom": {
         "name": "Custom Provider",
         "base_url": "",

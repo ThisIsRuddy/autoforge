@@ -158,3 +158,4 @@ Pipfile.lock
 .temp/
 tmpclaude-*-cwd
 ui/test-results/
+.autoforge
