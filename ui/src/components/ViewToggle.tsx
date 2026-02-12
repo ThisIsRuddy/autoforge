@@ -1,7 +1,7 @@
-import { LayoutGrid, GitBranch } from 'lucide-react'
+import { LayoutGrid, GitBranch, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export type ViewMode = 'kanban' | 'graph'
+export type ViewMode = 'kanban' | 'graph' | 'agents'
 
 interface ViewToggleProps {
   viewMode: ViewMode
@@ -9,7 +9,7 @@ interface ViewToggleProps {
 }
 
 /**
- * Toggle button to switch between Kanban and Graph views
+ * Toggle button to switch between Kanban, Graph, and Skilled Agents views
  */
 export function ViewToggle({ viewMode, onViewModeChange }: ViewToggleProps) {
   return (
@@ -31,6 +31,15 @@ export function ViewToggle({ viewMode, onViewModeChange }: ViewToggleProps) {
       >
         <GitBranch size={16} />
         Graph
+      </Button>
+      <Button
+        variant={viewMode === 'agents' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => onViewModeChange('agents')}
+        title="Skilled Agents"
+      >
+        <Bot size={16} />
+        Agents
       </Button>
     </div>
   )

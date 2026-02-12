@@ -33,6 +33,10 @@ import type {
   ScheduleUpdate,
   ScheduleListResponse,
   NextRunResponse,
+  SkilledAgent,
+  SkilledAgentCreate,
+  SkilledAgentUpdate,
+  Skill,
 } from './types'
 
 const API_BASE = '/api'
@@ -541,3 +545,42 @@ export async function deleteSchedule(
 export async function getNextScheduledRun(projectName: string): Promise<NextRunResponse> {
   return fetchJSON(`/projects/${encodeURIComponent(projectName)}/schedules/next`)
 }
+
+// ============================================================================
+// Skilled Agent API
+// ============================================================================
+
+export async function listSkilledAgents(): Promise<SkilledAgent[]> {
+  return fetchJSON('/skilled-agents')
+}
+
+export async function createSkilledAgent(agent: SkilledAgentCreate): Promise<SkilledAgent> {
+  return fetchJSON('/skilled-agents', {
+    method: 'POST',
+    body: JSON.stringify(agent),
+  })
+}
+
+export async function getSkilledAgent(agentId: number): Promise<SkilledAgent> {
+  return fetchJSON(`/skilled-agents/${agentId}`)
+}
+
+export async function updateSkilledAgent(agentId: number, update: SkilledAgentUpdate): Promise<SkilledAgent> {
+  return fetchJSON(`/skilled-agents/${agentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(update),
+  })
+}
+
+export async function deleteSkilledAgent(agentId: number): Promise<void> {
+  await fetchJSON(`/skilled-agents/${agentId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function listAvailableSkills(): Promise<Skill[]> {
+  return fetchJSON('/skilled-agents/skills/available')
+}
+
+// Skilled agent chat now uses WebSocket directly in AgentSessionScreen.tsx
+// WebSocket URL: /api/skilled-agents/ws/{agentId}/{projectName}

@@ -624,3 +624,38 @@ export interface NextRunResponse {
   is_currently_running: boolean
   active_schedule_count: number
 }
+
+// ============================================================================
+// Skilled Agent Types
+// ============================================================================
+
+export interface SkilledAgentConfig {
+  skills: string[]
+  preprompt: string
+  model?: string
+  temperature?: number
+}
+
+export interface SkilledAgentCreate {
+  name: string
+  config: SkilledAgentConfig
+}
+
+export interface SkilledAgentUpdate {
+  name?: string
+  config?: SkilledAgentConfig
+}
+
+export interface SkilledAgent {
+  id: number
+  name: string
+  config: SkilledAgentConfig
+  created_at: string
+  updated_at: string
+}
+
+export interface Skill {
+  name: string
+  description: string
+  location: string
+}

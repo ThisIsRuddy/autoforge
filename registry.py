@@ -130,6 +130,17 @@ class Settings(Base):
     updated_at = Column(DateTime, nullable=False)
 
 
+class SkilledAgent(Base):
+    """SQLAlchemy model for skilled agent configurations."""
+    __tablename__ = "skilled_agents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    config = Column(String, nullable=False)  # JSON string
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
 # =============================================================================
 # Database Connection
 # =============================================================================
@@ -640,6 +651,131 @@ def get_all_settings() -> dict[str, str]:
     except Exception as e:
         logger.warning("Failed to read settings: %s", e)
         return {}
+
+
+# =============================================================================
+# Skilled Agent CRUD Functions
+# =============================================================================
+
+def create_skilled_agent(name: str, config: str) -> int:
+    """
+    Create a new skilled agent configuration.
+
+    Args:
+        name: The agent name.
+        config: The configuration JSON string.
+
+    Returns:
+        The new agent ID.
+    """
+    with _get_session() as session:
+        agent = SkilledAgent(name=name, config=config)
+        session.add(agent)
+        session.flush()  # flush to get the id
+        agent_id = agent.id
+    
+    logger.info("Created skilled agent '%s' (ID: %d)", name, agent_id)
+    return agent_id
+
+
+def get_skilled_agent(agent_id: int) -> dict[str, Any] | None:
+    """
+    Get a skilled agent by ID.
+
+    Args:
+        agent_id: The agent ID.
+
+    Returns:
+        Agent info dictionary, or None if not found.
+    """
+    _, SessionLocal = _get_engine()
+    session = SessionLocal()
+    try:
+        agent = session.query(SkilledAgent).filter(SkilledAgent.id == agent_id).first()
+        if agent is None:
+            return None
+        return {
+            "id": agent.id,
+            "name": agent.name,
+            "config": agent.config,
+            "created_at": agent.created_at.isoformat() if agent.created_at else None,
+            "updated_at": agent.updated_at.isoformat() if agent.updated_at else None,
+        }
+    finally:
+        session.close()
+
+
+def list_skilled_agents() -> list[dict[str, Any]]:
+    """
+    List all skilled agents.
+
+    Returns:
+        List of agent info dictionaries.
+    """
+    _, SessionLocal = _get_engine()
+    session = SessionLocal()
+    try:
+        agents = session.query(SkilledAgent).all()
+        return [
+            {
+                "id": a.id,
+                "name": a.name,
+                "config": a.config,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "updated_at": a.updated_at.isoformat() if a.updated_at else None,
+            }
+            for a in agents
+        ]
+    finally:
+        session.close()
+
+
+def update_skilled_agent(agent_id: int, name: str | None = None, config: str | None = None) -> bool:
+    """
+    Update a skilled agent.
+
+    Args:
+        agent_id: The agent ID.
+        name: New name (optional).
+        config: New config JSON (optional).
+
+    Returns:
+        True if updated, False if not found.
+    """
+    with _get_session() as session:
+        agent = session.query(SkilledAgent).filter(SkilledAgent.id == agent_id).first()
+        if not agent:
+            return False
+
+        if name is not None:
+            agent.name = name
+        if config is not None:
+            agent.config = config
+        
+        # updated_at is handled automatically by onupdate
+
+    logger.info("Updated skilled agent ID %d", agent_id)
+    return True
+
+
+def delete_skilled_agent(agent_id: int) -> bool:
+    """
+    Delete a skilled agent.
+
+    Args:
+        agent_id: The agent ID.
+
+    Returns:
+        True if deleted, False if not found.
+    """
+    with _get_session() as session:
+        agent = session.query(SkilledAgent).filter(SkilledAgent.id == agent_id).first()
+        if not agent:
+            return False
+        session.delete(agent)
+
+    logger.info("Deleted skilled agent ID %d", agent_id)
+    return True
 
 
 # =============================================================================

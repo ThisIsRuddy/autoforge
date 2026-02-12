@@ -27,8 +27,9 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp'
 import { ThemeSelector } from './components/ThemeSelector'
 import { ResetProjectModal } from './components/ResetProjectModal'
 import { ProjectSetupRequired } from './components/ProjectSetupRequired'
+import { SkilledAgentsScreen } from './components/SkilledAgentsScreen'
 import { getDependencyGraph, startAgent } from './lib/api'
-import { Loader2, Settings, Moon, Sun, RotateCcw, BookOpen } from 'lucide-react'
+import { Loader2, Settings, Moon, Sun, RotateCcw, BookOpen, Bot } from 'lucide-react'
 import type { Feature } from './lib/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -70,6 +71,7 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
       const stored = localStorage.getItem(VIEW_MODE_KEY)
+      if (stored === 'agents') return 'agents'
       return (stored === 'graph' ? 'graph' : 'kanban') as ViewMode
     } catch {
       return 'kanban'
@@ -198,10 +200,14 @@ function App() {
         setShowSettings(true)
       }
 
-      // G : Toggle between Kanban and Graph view (when project selected)
+      // G : Toggle between Kanban, Graph, and Agents view (when project selected)
       if ((e.key === 'g' || e.key === 'G') && selectedProject) {
         e.preventDefault()
-        setViewMode(prev => prev === 'kanban' ? 'graph' : 'kanban')
+        setViewMode(prev => {
+          if (prev === 'kanban') return 'graph'
+          if (prev === 'graph') return 'agents'
+          return 'kanban'
+        })
       }
 
       // ? : Show keyboard shortcuts help
@@ -357,6 +363,21 @@ function App() {
                   url={wsState.devServerUrl}
                 />
 
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setViewMode('agents')}
+                      variant={viewMode === 'agents' ? 'default' : 'outline'}
+                      size="sm"
+                      aria-label="Skilled Agents"
+                    >
+                      <Bot size={18} className="mr-2" />
+                      Agents
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Skilled Agents (G)</TooltipContent>
+                </Tooltip>
+
                 <div className="flex-1" />
 
                 <Tooltip>
@@ -407,65 +428,74 @@ function App() {
               Select a project from the dropdown above or create a new one to get started.
             </p>
           </div>
-        ) : !hasSpec ? (
-          <ProjectSetupRequired
-            projectName={selectedProject}
-            projectPath={selectedProjectData?.path}
-            onCreateWithClaude={() => setShowSpecChat(true)}
-            onEditManually={() => {
-              // Open debug panel for the user to see the project path
-              setDebugOpen(true)
-            }}
-          />
         ) : (
           <div className="space-y-8">
-            {/* Progress Dashboard */}
-            <ProgressDashboard
-              passing={progress.passing}
-              total={progress.total}
-              percentage={progress.percentage}
-              isConnected={wsState.isConnected}
-              logs={wsState.activeAgents.length === 0 ? wsState.logs : undefined}
-              agentStatus={wsState.activeAgents.length === 0 ? wsState.agentStatus : undefined}
-            />
+            {/* Show dashboards only if we have a spec */}
+            {hasSpec && (
+              <>
+                {/* Progress Dashboard */}
+                <ProgressDashboard
+                  passing={progress.passing}
+                  total={progress.total}
+                  percentage={progress.percentage}
+                  isConnected={wsState.isConnected}
+                  logs={wsState.activeAgents.length === 0 ? wsState.logs : undefined}
+                  agentStatus={wsState.activeAgents.length === 0 ? wsState.agentStatus : undefined}
+                />
 
-            {/* Agent Mission Control - shows orchestrator status and active agents in parallel mode */}
-            <AgentMissionControl
-              agents={wsState.activeAgents}
-              orchestratorStatus={wsState.orchestratorStatus}
-              recentActivity={wsState.recentActivity}
-              getAgentLogs={wsState.getAgentLogs}
-            />
+                {/* Agent Mission Control - shows orchestrator status and active agents in parallel mode */}
+                <AgentMissionControl
+                  agents={wsState.activeAgents}
+                  orchestratorStatus={wsState.orchestratorStatus}
+                  recentActivity={wsState.recentActivity}
+                  getAgentLogs={wsState.getAgentLogs}
+                />
 
+                {/* Initializing Features State - show when agent is running but no features yet */}
+                {features &&
+                features.pending.length === 0 &&
+                features.in_progress.length === 0 &&
+                features.done.length === 0 &&
+                wsState.agentStatus === 'running' && (
+                  <Card className="p-8 text-center">
+                    <CardContent className="p-0">
+                      <Loader2 size={32} className="animate-spin mx-auto mb-4 text-primary" />
+                      <h3 className="font-display font-bold text-xl mb-2">
+                        Initializing Features...
+                      </h3>
+                      <p className="text-muted-foreground">
+                        The agent is reading your spec and creating features. This may take a moment.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
 
-            {/* Initializing Features State - show when agent is running but no features yet */}
-            {features &&
-             features.pending.length === 0 &&
-             features.in_progress.length === 0 &&
-             features.done.length === 0 &&
-             wsState.agentStatus === 'running' && (
-              <Card className="p-8 text-center">
-                <CardContent className="p-0">
-                  <Loader2 size={32} className="animate-spin mx-auto mb-4 text-primary" />
-                  <h3 className="font-display font-bold text-xl mb-2">
-                    Initializing Features...
-                  </h3>
-                  <p className="text-muted-foreground">
-                    The agent is reading your spec and creating features. This may take a moment.
-                  </p>
-                </CardContent>
-              </Card>
+                {/* View Toggle - always show when project has spec */}
+                <div className="flex justify-center">
+                  <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+                </div>
+              </>
             )}
 
-            {/* View Toggle - only show when there are features */}
-            {features && (features.pending.length + features.in_progress.length + features.done.length) > 0 && (
-              <div className="flex justify-center">
-                <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-              </div>
-            )}
-
-            {/* Kanban Board or Dependency Graph based on view mode */}
-            {viewMode === 'kanban' ? (
+            {/* Content Switcher */}
+            {viewMode === 'agents' ? (
+              // Agents view is always accessible
+              <SkilledAgentsScreen 
+                projectName={selectedProject}
+              />
+            ) : !hasSpec ? (
+              // If no spec and not in agents view, show setup required
+              <ProjectSetupRequired
+                projectName={selectedProject}
+                projectPath={selectedProjectData?.path}
+                onCreateWithClaude={() => setShowSpecChat(true)}
+                onEditManually={() => {
+                  // Open debug panel for the user to see the project path
+                  setDebugOpen(true)
+                }}
+              />
+            ) : viewMode === 'kanban' ? (
+              // Kanban view (requires spec)
               <KanbanBoard
                 features={features}
                 onFeatureClick={setSelectedFeature}
@@ -476,6 +506,7 @@ function App() {
                 hasSpec={hasSpec}
               />
             ) : (
+              // Graph view (requires spec)
               <Card className="overflow-hidden" style={{ height: '600px' }}>
                 {graphData ? (
                   <DependencyGraph

@@ -638,3 +638,46 @@ class NextRunResponse(BaseModel):
     next_end: datetime | None  # UTC (latest end if overlapping)
     is_currently_running: bool
     active_schedule_count: int
+
+# ============================================================================
+# Skilled Agent Schemas
+# ============================================================================
+
+from typing import List, Optional
+from pydantic import BaseModel
+
+class SkilledAgentConfig(BaseModel):
+    skills: List[str] = []
+    preprompt: str = ""
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+
+class SkilledAgentCreate(BaseModel):
+    name: str
+    config: SkilledAgentConfig
+
+class SkilledAgentUpdate(BaseModel):
+    name: Optional[str] = None
+    config: Optional[SkilledAgentConfig] = None
+
+class SkilledAgentResponse(BaseModel):
+    id: int
+    name: str
+    config: SkilledAgentConfig
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class Skill(BaseModel):
+    name: str
+    description: str
+    location: str
+
+class ChatMessageRequest(BaseModel):
+    """Request schema for sending a chat message."""
+    content: str
+    project_name: Optional[str] = None
+    conversation_id: Optional[int] = None
+
